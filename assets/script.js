@@ -70,6 +70,7 @@ function searchClicker() {
         return;
     }
     APIcalls(city);
+    cities.push(city);
     storeCities();
     renderButtons();
 }
