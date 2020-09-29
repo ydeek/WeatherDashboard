@@ -1,135 +1,125 @@
-//declared variables
-var city = "";
-var url = "";
-var APIkey = "";
-var queryurl = "";
-var currenturl = "";
-var citiesDiv = document.getElementById("searched_cities_container");
-// started with an empty array 
-var cities = [];
-init();
+function initPage() {
+    const inputEl = document.getElementById("city-input");
+    const searchEl = document.getElementById("search-button");
+    const clearEl = document.getElementById("clear-history");
+    const nameEl = document.getElementById("city-name");
+    const currentPicEl = document.getElementById("current-pic");
+    const currentTempEl = document.getElementById("temperature");
+    const currentHumidityEl = document.getElementById("humidity"); 4
+    const currentWindEl = document.getElementById("wind-speed");
+    const currentUVEl = document.getElementById("UV-index");
+    const historyEl = document.getElementById("history");
+    let searchHistory = JSON.parse(localStorage.getItem("search")) || [];
+    console.log(searchHistory);
 
 
-function init() {
-    var savedCities = JSON.parse(localStorage.getItem("cities"));
-
-    if (savedCities !== null) {
-        cities = savedCities
-    }
-
-    renderButtons();
-}
+    const APIKey = "e003e884a673c8994a9d786afd4dcdc8";
 
 
-function storeCities() {
-    localStorage.setItem("cities", JSON.stringify(cities));
-}
+    function getWeather(cityName) {
 
+        let queryURL = "https://api.openweathermap.org/data/2.5/weather?q=" + cityName + "&appid=" + APIKey;
+        axios.get(queryURL)
+            .then(function (response) {
+                console.log(response);
 
-function renderButtons() {
-    citiesDiv.innerHTML = "";
-    if (cities == null) {
-        return;
-    }
-    var unique_cities = [...new Set(cities)];
-    for (var i = 0; i < unique_cities.length; i++) {
-        var cityName = unique_cities[i];
+                const currentDate = new Date(response.data.dt * 1000);
+                console.log(currentDate);
+                const day = currentDate.getDate();
+                const month = currentDate.getMonth() + 1;
+                const year = currentDate.getFullYear();
+                nameEl.innerHTML = response.data.name + " (" + month + "/" + day + "/" + year + ") ";
+                let weatherPic = response.data.weather[0].icon;
+                currentPicEl.setAttribute("src", "https://openweathermap.org/img/wn/" + weatherPic + "@2x.png");
+                currentPicEl.setAttribute("alt", response.data.weather[0].description);
+                currentTempEl.innerHTML = "Temperature: " + k2f(response.data.main.temp) + " &#176F";
+                currentHumidityEl.innerHTML = "Humidity: " + response.data.main.humidity + "%";
+                currentWindEl.innerHTML = "Wind Speed: " + response.data.wind.speed + " MPH";
+                let lat = response.data.coord.lat;
+                let lon = response.data.coord.lon;
+                let UVQueryURL = "https://api.openweathermap.org/data/2.5/uvi/forecast?lat=" + lat + "&lon=" + lon + "&appid=" + APIKey + "&cnt=1";
+                axios.get(UVQueryURL)
+                    .then(function (response) {
+                        let UVIndex = document.createElement("span");
+                        UVIndex.setAttribute("class", "badge badge-danger");
+                        UVIndex.innerHTML = response.data[0].value;
+                        currentUVEl.innerHTML = "UV Index: ";
+                        currentUVEl.append(UVIndex);
+                    });
 
-        var buttonEl = document.createElement("button");
-        buttonEl.textContent = cityName;
-        buttonEl.setAttribute("class", "listbtn");
+                let cityID = response.data.id;
+                let forecastQueryURL = "https://api.openweathermap.org/data/2.5/forecast?id=" + cityID + "&appid=" + APIKey;
+                axios.get(forecastQueryURL)
+                    .then(function (response) {
 
-        citiesDiv.appendChild(buttonEl);
-
-    }
-}
-//function for search history buttons
-
-$(".listbtn").on("click", function (event) {
-    console.log("anybody home?")
-    event.preventDefault();
-    console.log("hello?");
-    city = $(this).text().trim();
-    APIcalls();
-})
-
-
-
-
-//Function for main search 
-function searchClicker() {
-    city = $("#searchTerm").val().trim()
-    console.log(city)
-
-
-    if (cities.length > 8) {
-        cities.shift()
-    }
-
-    if (city == "") {
-        return;
-    }
-    APIcalls(city);
-    cities.push(city);
-    storeCities();
-    renderButtons();
-}
-
-$("#searchBtn").on("click", function () {
-    searchClicker()
-})
-
-//APIs calls for curent weather and other weather information. 
-const APIcalls = (city) => {
-
-    APIkey = "e003e884a673c8994a9d786afd4dcdc8"
-    $.ajax({
-        method: "GET",
-        url: "https://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + APIkey
-    })
-        .then(function (locationInfo) {
-            console.log(locationInfo)
-
-            full_url = `https://api.openweathermap.org/data/2.5/onecall?&lat=${locationInfo.coord.lat}&lon=${locationInfo.coord.lon}&appid=${APIkey}`
-
-
-            console.log(full_url)
-            $("#name_of_city").text("Today's Weather in " + city);
-            $.ajax({
-                method: "GET",
-                url: full_url,
-            }).then(function (response) {
-                var day_number = 0;
-                console.log(response)
-                for (var i = 0; i < response.daily.length; i++) {
-                    console.log(response.daily[i])
-
-                }
+                        console.log(response);
+                        const forecastEls = document.querySelectorAll(".forecast");
+                        for (i = 0; i < forecastEls.length; i++) {
+                            forecastEls[i].innerHTML = "";
+                            const forecastIndex = i * 8 + 4;
+                            const forecastDate = new Date(response.data.list[forecastIndex].dt * 1000);
+                            const forecastDay = forecastDate.getDate();
+                            const forecastMonth = forecastDate.getMonth() + 1;
+                            const forecastYear = forecastDate.getFullYear();
+                            const forecastDateEl = document.createElement("p");
+                            forecastDateEl.setAttribute("class", "mt-3 mb-0 forecast-date");
+                            forecastDateEl.innerHTML = forecastMonth + "/" + forecastDay + "/" + forecastYear;
+                            forecastEls[i].append(forecastDateEl);
+                            const forecastWeatherEl = document.createElement("img");
+                            forecastWeatherEl.setAttribute("src", "https://openweathermap.org/img/wn/" + response.data.list[forecastIndex].weather[0].icon + "@2x.png");
+                            forecastWeatherEl.setAttribute("alt", response.data.list[forecastIndex].weather[0].description);
+                            forecastEls[i].append(forecastWeatherEl);
+                            const forecastTempEl = document.createElement("p");
+                            forecastTempEl.innerHTML = "Temp: " + k2f(response.data.list[forecastIndex].main.temp) + " &#176F";
+                            forecastEls[i].append(forecastTempEl);
+                            const forecastHumidityEl = document.createElement("p");
+                            forecastHumidityEl.innerHTML = "Humidity: " + response.data.list[forecastIndex].main.humidity + "%";
+                            forecastEls[i].append(forecastHumidityEl);
+                        }
+                    })
             });
-        })
+    }
+
+    searchEl.addEventListener("click", function () {
+        const searchTerm = inputEl.value;
+        getWeather(searchTerm);
+        searchHistory.push(searchTerm);
+        localStorage.setItem("search", JSON.stringify(searchHistory));
+        renderSearchHistory();
+    })
+
+    clearEl.addEventListener("click", function () {
+        searchHistory = [];
+        renderSearchHistory();
+    })
+
+    function k2f(K) {
+        return Math.floor((K - 273.15) * 1.8 + 32);
+    }
+
+    function renderSearchHistory() {
+        historyEl.innerHTML = "";
+        for (let i = 0; i < searchHistory.length; i++) {
+            const historyItem = document.createElement("input");
+
+            historyItem.setAttribute("type", "text");
+            historyItem.setAttribute("readonly", true);
+            historyItem.setAttribute("class", "form-control d-block bg-white");
+            historyItem.setAttribute("value", searchHistory[i]);
+            historyItem.addEventListener("click", function () {
+                getWeather(historyItem.value);
+            })
+            historyEl.append(historyItem);
+        }
+    }
+
+    renderSearchHistory();
+    if (searchHistory.length > 0) {
+        getWeather(searchHistory[searchHistory.length - 1]);
+    }
+
+
+
+
 }
-const input = document.getElementById('city');
-const button = document.getElementById('submit');
-
-button.addEventListener('click', () => {
-    fetch('https://api.openweathermap.org/data/2.5/weather?q=' + input.value + '&APPID=8c58cdf09921e64f4e1a85cf405d8398&units=metric')
-        .then(resp => resp.json())
-        .then(data => {
-
-            let div = document.createElement('div');
-            let weather1 = document.querySelector('#result-api');
-            weather1.innerHTML = '';
-            div.innerHTML = '<p>' + 'City: ' + '<span>' + data.name + '</span>' + '</p>' +
-                '<p>' + 'Country: ' + '<span>' + data.sys.country + '</span>' + '</p>' +
-                '<p>' + 'Temperature: ' + '<span>' + data.main.temp + '&#8451;' + '</span>' + '</p>' +
-                '<p>' + 'Humidity: ' + '<span>' + data.main.humidity + '</span>' + '</p>' +
-                '<p>' + 'Weather: ' + '<span>' + data.weather[0].main + '</span>' + '</p>' +
-                '<p>' + 'Description: ' + '<span>' + data.weather[0].description + '</span>' + '</p>';
-
-
-            weather1.appendChild(div).style.border = '1px solid lightblue';
-        })
-        .catch(err => document.getElementById('result-api').innerHTML = "error!")
-})
-
-
+initPage();
