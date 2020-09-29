@@ -108,31 +108,28 @@ const APIcalls = (city) => {
             });
         })
 }
+const input = document.getElementById('city');
+const button = document.getElementById('submit');
 
-function getCurrentConditions(response) {
+button.addEventListener('click', () => {
+    fetch('https://api.openweathermap.org/data/2.5/weather?q=' + input.value + '&APPID=8c58cdf09921e64f4e1a85cf405d8398&units=metric')
+        .then(resp => resp.json())
+        .then(data => {
 
-    // convert tempreture to F 
-    var tempF = (response.main.temp - 273.15) * 1.80 + 32;
-    tempF = Math.floor(tempF);
+            let div = document.createElement('div');
+            let weather1 = document.querySelector('#result-api');
+            weather1.innerHTML = '';
+            div.innerHTML = '<p>' + 'City: ' + '<span>' + data.name + '</span>' + '</p>' +
+                '<p>' + 'Country: ' + '<span>' + data.sys.country + '</span>' + '</p>' +
+                '<p>' + 'Temperature: ' + '<span>' + data.main.temp + '&#8451;' + '</span>' + '</p>' +
+                '<p>' + 'Humidity: ' + '<span>' + data.main.humidity + '</span>' + '</p>' +
+                '<p>' + 'Weather: ' + '<span>' + data.weather[0].main + '</span>' + '</p>' +
+                '<p>' + 'Description: ' + '<span>' + data.weather[0].description + '</span>' + '</p>';
 
-    $('#currentCity').empty();
 
-
-    const card = $("<div>").addClass("card");
-    const cardBody = $("<div>").addClass("card-body");
-    const city = $("<h4>").addClass("card-title").text(response.name);
-    const cityDate = $("<h4>").addClass("card-title").text(date.toLocaleDateString('en-US'));
-    const temperature = $("<p>").addClass("card-text current-temp").text("Temperature: " + tempF + " °F");
-    const humidity = $("<p>").addClass("card-text current-humidity").text("Humidity: " + response.main.humidity + "%");
-    const wind = $("<p>").addClass("card-text current-wind").text("Wind Speed: " + response.wind.speed + " MPH");
-    const image = $("<img>").attr("src", "https://openweathermap.org/img/w/" + response.weather[0].icon + ".png")
-
-    // this for add to the page 
-    city.append(cityDate, image)
-    cardBody.append(city, temperature, humidity, wind);
-    card.append(cardBody);
-    $("#currentCity").append(card)
-
-}
+            weather1.appendChild(div).style.border = '1px solid lightblue';
+        })
+        .catch(err => document.getElementById('result-api').innerHTML = "error!")
+})
 
 
